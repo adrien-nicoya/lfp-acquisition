@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acquisition — LFP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#f6f8fc; --surface:#ffffff; --ink:#0f1a3d; --muted:#5d6885; --line:#dfe5f1;
+  --blue:#3b82f6; --blue-dark:#1e40af; --blue-light:#eff6ff;
+  --warn-bg:#fff7e6; --warn-ink:#7a4b00;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
+  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
+  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.brand{color:var(--blue);font-weight:600;font-size:14px;margin:0 0 4px}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.01em}
+.period{color:var(--muted);font-size:14px;margin-top:4px}
+.refresh{display:flex;align-items:center;gap:14px}
+.stamp{color:var(--muted);font-size:13px;text-align:right}
+button{font:inherit;font-weight:600;font-size:14px;color:#fff;background:var(--blue-dark);border:0;border-radius:8px;padding:10px 16px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+:root[data-theme="dark"] button{color:#0c1430}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button{color:#0c1430}}
+button:disabled{opacity:.6;cursor:progress}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:none;animation:r .8s linear infinite}
+button:disabled .spin{display:inline-block}
+@keyframes r{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.notice{margin-top:18px;padding:12px 16px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink);font-size:14px}
+.notice:empty{display:none}
+section{margin-top:40px}
+h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
+.sub{color:var(--muted);font-weight:500;font-size:14px;margin-left:8px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{padding:18px 22px}
+.kpi+.kpi{border-left:1px solid var(--line)}
+.kpi .k{color:var(--muted);font-size:14px}
+.kpi .v{font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-.01em}
+.kpi .d{color:var(--muted);font-size:13px;margin-top:2px}
+.kpi.real{background:var(--blue-dark);color:#fff}
+.kpi.real .k,.kpi.real .d{color:#c7d6ff}
+:root[data-theme="dark"] .kpi.real{background:#1e3a8a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi.real{background:#1e3a8a}}
+@media (max-width:640px){.kpis{grid-template-columns:1fr}.kpi+.kpi{border-left:0;border-top:1px solid var(--line)}.wrap{padding:20px 16px 48px}}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-top:16px}
+.chart-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.chart h3{margin:0;font-size:15px;font-weight:600}
+.legend{display:flex;gap:16px;color:var(--muted);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block}
+.sw.bar{width:12px;height:12px;border-radius:3px;background:var(--blue)}
+.sw.line{width:16px;height:3px;border-radius:2px;background:var(--ink)}
+.chart .box{position:relative;height:340px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="brand">Dashboard acquisition</p>
+      <h1 id="title">LFP</h1>
+      <div class="period" id="period"></div>
+    </div>
+    <div class="refresh">
+      <div class="stamp" id="stamp">Chargement…</div>
+      <button id="btn" type="button"><span class="spin"></span>Mettre à jour</button>
+    </div>
+  </header>
+  <div class="notice" id="notice"></div>
+
+  <section aria-labelledby="h-meta">
+    <h2 id="h-meta">Publicités Meta<span class="sub" id="meta-sub"></span></h2>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Dépensé</div><div class="v" id="k-spend">–</div><div class="d" id="k-spend-d"></div></div>
+      <div class="kpi real"><div class="k">CPL Meta</div><div class="v" id="k-cplm">–</div><div class="d" id="k-cplm-d"></div></div>
+    </div>
+    <div class="chart">
+      <div class="chart-head"><h3>Dépense et CPL Meta par jour</h3>
+        <div class="legend"><span><i class="sw bar"></i>Dépense</span><span><i class="sw line"></i>CPL Meta</span></div></div>
+      <div class="box"><canvas id="c-meta" aria-label="Dépense et CPL Meta par jour"></canvas></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf=new Intl.NumberFormat('fr-FR');
+const eur=(n,d=2)=>n==null?'–':n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:d,maximumFractionDigits:d});
+const int=n=>n==null?'–':nf.format(n);
+const dshort=s=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+const dlong=s=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let chart, last;
+
+function render(d){
+  last=d;
+  const c=d.challenge||{};
+  document.getElementById('title').textContent=c.name||'LFP';
+  document.title=(c.name||'LFP')+' — Acquisition';
+  document.getElementById('period').textContent=c.startDate?`Acquisition du ${dlong(c.startDate)} au ${dlong(c.endDate)}`:'';
+  document.getElementById('stamp').textContent='Mis à jour à '+new Date(d.generatedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const notes=[];
+  if(d.notStarted) notes.push(`L'acquisition démarre le ${dlong(c.startDate)} : le dashboard se remplira à partir de cette date.`);
+  (d.errors||[]).forEach(e=>notes.push('Erreur : '+e));
+  (d.warnings||[]).forEach(w=>notes.push(w));
+  document.getElementById('notice').innerHTML=notes.map(esc).join('<br>');
+  renderMeta(d.meta,d.today);
+}
+
+function renderMeta(m,today){
+  const set=(id,v)=>document.getElementById(id).textContent=v;
+  if(!m){['k-spend','k-cplm'].forEach(i=>set(i,'–'));['k-spend-d','k-cplm-d','meta-sub'].forEach(i=>set(i,''));drawChart([],today);return}
+  set('k-spend',eur(m.spend,0)); set('k-spend-d',m.daily.length?`${m.daily.length} jours de diffusion`:'');
+  set('k-cplm',eur(m.cplMeta)); set('k-cplm-d',`${int(m.leads)} leads déclarés par Meta`);
+  const act=(m.accounts||[]).filter(a=>!a.inactive&&!a.failed).length;
+  set('meta-sub',m.accounts?.length>1?`${act} comptes actifs sur ${m.accounts.length}`:'');
+  drawChart(m.daily,today);
+}
+
+function drawChart(daily,today){
+  if(!window.Chart) return;
+  const grid=css('--line'), tick=css('--muted'), blue=css('--blue'), ink=css('--ink'), font={family:'Instrument Sans'};
+  chart&&chart.destroy();
+  chart=new Chart(document.getElementById('c-meta'),{
+    data:{labels:daily.map(x=>dshort(x.date)+(x.date===today?' (en cours)':'')),datasets:[
+      {type:'bar',label:'Dépense',data:daily.map(x=>x.spend),backgroundColor:daily.map(x=>x.date===today?blue+'66':blue),borderRadius:3,maxBarThickness:38,yAxisID:'y',order:2},
+      {type:'line',label:'CPL Meta',data:daily.map(x=>x.cpl),borderColor:ink,backgroundColor:ink,pointRadius:3,borderWidth:2,tension:.25,spanGaps:true,yAxisID:'y1',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label} : ${eur(c.parsed.y,c.dataset.yAxisID==='y'?0:2)}`,
+        afterBody:items=>`Leads Meta : ${int(daily[items[0].dataIndex].leads)}`}}},
+      scales:{x:{grid:{display:false},ticks:{color:tick,font}},
+        y:{position:'left',beginAtZero:true,grid:{color:grid},ticks:{color:tick,font,callback:v=>eur(v,0)},title:{display:true,text:'Dépense',color:tick,font}},
+        y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{color:tick,font,callback:v=>eur(v)},title:{display:true,text:'CPL',color:tick,font}}}}});
+}
+
+async function load(){
+  const btn=document.getElementById('btn'); btn.disabled=true;
+  document.getElementById('stamp').textContent='Mise à jour…';
+  try{
+    const r=await fetch('/api/report',{cache:'no-store'});
+    if(!(r.headers.get('content-type')||'').includes('application/json')) throw new Error('no-api');
+    render(await r.json());
+  }catch(e){ document.getElementById('stamp').textContent='Données indisponibles'; document.getElementById('notice').textContent='Impossible de joindre l\'API du dashboard.'; }
+  finally{ btn.disabled=false; }
+}
+document.getElementById('btn').addEventListener('click',load);
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>last&&renderMeta(last.meta,last.today));
+load();
+</script>
+</body>
+</html>
