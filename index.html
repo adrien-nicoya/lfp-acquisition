@@ -10,35 +10,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
-  --paper:#f6f8fc; --surface:#ffffff; --ink:#0f1a3d; --muted:#5d6885; --line:#dfe5f1;
-  --blue:#3b82f6; --blue-dark:#1e40af; --blue-light:#eff6ff;
-  --warn-bg:#fff7e6; --warn-ink:#7a4b00;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
-  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
-  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
-}}
-:root[data-theme="dark"]{
-  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
-  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
-  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
+  /* Charte LFP (lemanfp.com) */
+  --paper:#090d12; --surface:#0f161c; --ink:#f4f5f2; --muted:#aab3b7; --line:#1f2a31;
+  --accent:#2aeda6; --accent-ink:#03110b; --bar:#2aeda6;
+  --warn-bg:#2a2208; --warn-ink:#ffd58a;
+  color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
 header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--line)}
-.brand{color:var(--blue);font-weight:600;font-size:14px;margin:0 0 4px}
+.brand{color:var(--accent);font-weight:600;font-size:14px;margin:0 0 4px}
 h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.01em}
 .period{color:var(--muted);font-size:14px;margin-top:4px}
 .refresh{display:flex;align-items:center;gap:14px}
 .stamp{color:var(--muted);font-size:13px;text-align:right}
-button{font:inherit;font-weight:600;font-size:14px;color:#fff;background:var(--blue-dark);border:0;border-radius:8px;padding:10px 16px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
-:root[data-theme="dark"] button{color:#0c1430}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button{color:#0c1430}}
+button{font:inherit;font-weight:600;font-size:14px;color:var(--accent-ink);background:var(--accent);border:0;border-radius:8px;padding:10px 16px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
 button:disabled{opacity:.6;cursor:progress}
-button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:none;animation:r .8s linear infinite}
 button:disabled .spin{display:inline-block}
 @keyframes r{to{transform:rotate(360deg)}}
@@ -54,10 +43,8 @@ h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
 .kpi .k{color:var(--muted);font-size:14px}
 .kpi .v{font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-.01em}
 .kpi .d{color:var(--muted);font-size:13px;margin-top:2px}
-.kpi.real{background:var(--blue-dark);color:#fff}
-.kpi.real .k,.kpi.real .d{color:#c7d6ff}
-:root[data-theme="dark"] .kpi.real{background:#1e3a8a}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi.real{background:#1e3a8a}}
+.kpi.real{background:var(--accent);color:var(--accent-ink)}
+.kpi.real .k,.kpi.real .d{color:#0b5c40}
 @media (max-width:640px){.kpis{grid-template-columns:1fr}.kpi+.kpi{border-left:0;border-top:1px solid var(--line)}.wrap{padding:20px 16px 48px}}
 .chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-top:16px}
 .chart-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
@@ -65,7 +52,7 @@ h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
 .legend{display:flex;gap:16px;color:var(--muted);font-size:13px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block}
-.sw.bar{width:12px;height:12px;border-radius:3px;background:var(--blue)}
+.sw.bar{width:12px;height:12px;border-radius:3px;background:var(--bar)}
 .sw.line{width:16px;height:3px;border-radius:2px;background:var(--ink)}
 .chart .box{position:relative;height:340px}
 </style>
@@ -136,7 +123,7 @@ function renderMeta(m,today){
 
 function drawChart(daily,today){
   if(!window.Chart) return;
-  const grid=css('--line'), tick=css('--muted'), blue=css('--blue'), ink=css('--ink'), font={family:'Instrument Sans'};
+  const grid=css('--line'), tick=css('--muted'), blue=css('--bar'), ink=css('--ink'), font={family:'Instrument Sans'};
   chart&&chart.destroy();
   chart=new Chart(document.getElementById('c-meta'),{
     data:{labels:daily.map(x=>dshort(x.date)+(x.date===today?' (en cours)':'')),datasets:[
@@ -161,7 +148,6 @@ async function load(){
   finally{ btn.disabled=false; }
 }
 document.getElementById('btn').addEventListener('click',load);
-matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>last&&renderMeta(last.meta,last.today));
 load();
 </script>
 </body>
